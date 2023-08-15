@@ -23,7 +23,7 @@ docker exec awvs bash -c "cat /awvs/LAST_VERSION | sed 's/ //g' 2&gt;/dev/null"<
 mkdir /tmp/awvs &gt;/dev/null 2&gt;&amp;1<br />
 rm -rf /tmp/awvs_listen.zip<br />
 cd /tmp/<br />
-git clone https://github.com/shellsec/awvs_listen.git<br />
+git clone https://ghproxy.com/https://github.com/shellsec/awvs_listen.git<br />
 mv awvs_listen awvs<br />
 docker cp /tmp/awvs awvs:/tmp/awvs 2&gt;/dev/null<br />
 docker exec awvs bash -c "AWVS_DEBUG=${AWVS_DEBUG} bash &lt;(curl -sLk https://www.fahai.org/aDisk/Awvs/check-tools.sh)"<br />
