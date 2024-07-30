@@ -1,3 +1,55 @@
+up：20240730  awvs.sh 一键更新可用版本，自己改密码呗
+证书有效期
+Licensed
+Expires on Sep 19, 2123
+Licensed targets
+100000
+
+#!/bin/bash
+docker stop $(docker ps -a | grep "awvs" | awk '{print $1}');
+chattr -i -R /var/lib/docker/overlay2/*
+docker rm $(docker ps -a | grep "awvs" | awk '{print $1}');
+docker rmi -f $(docker images | grep "awvs" | awk '{print $3}');
+docker rmi --no-prune $(docker images | grep "awvs" | awk '{print $3}');
+
+
+docker run -it -d \
+--name awvs \
+-p 3443:3443 \
+--restart=always \
+xrsec/awvs
+
+
+curl -s -o awvs_listen.zip https://gh-proxy.com/https://raw.githubusercontent.com/shellsec/awvs_listen/master/awvs_listen02.zip
+docker cp awvs_listen.zip awvs:/awvs/
+docker exec -it awvs /bin/bash -c "unzip -o /awvs/awvs_listen.zip -d /home/acunetix/.acunetix/data/license/"
+docker exec -it awvs /bin/bash -c "chmod 444 /home/acunetix/.acunetix/data/license/license_info.json"
+docker exec -it awvs /bin/bash -c "chown acunetix:acunetix /home/acunetix/.acunetix/data/license/license_info.json"
+docker exec -it awvs /bin/bash -c "chattr +i /home/acunetix/.acunetix/data/license/license_info.json"
+
+docker exec -it awvs /bin/bash -c "chmod 444 /home/acunetix/.acunetix/data/license/wa_data.dat"
+docker exec -it awvs /bin/bash -c "chown acunetix:acunetix /home/acunetix/.acunetix/data/license/wa_data.dat"
+docker exec -it awvs /bin/bash -c "chattr +i /home/acunetix/.acunetix/data/license/wa_data.dat"
+
+docker exec -it awvs /bin/bash -c "mv /home/acunetix/.acunetix/data/license/wvsc /home/acunetix/.acunetix/v_*/scanner/"
+docker exec -it awvs /bin/bash -c "chmod 777 /home/acunetix/.acunetix/v_*/scanner/wvsc"
+docker exec -it awvs /bin/bash -c "chown acunetix:acunetix /home/acunetix/.acunetix/v_*/scanner/wvsc"
+
+docker exec -it awvs /bin/bash -c "rm /awvs/awvs_listen.zip"
+docker exec -it awvs /bin/bash -c "echo '127.0.0.1 updates.acunetix.com' > /awvs/.hosts"
+docker exec -it awvs /bin/bash -c "echo '127.0.0.1 erp.acunetix.com' >> /awvs/.hosts"
+docker exec -it awvs /bin/bash -c "::1  erp.acunetix.com' >> /awvs/.hosts"
+docker exec -it awvs /bin/bash -c "192.178.49.174  telemetry.invicti.com' >> /awvs/.hosts"
+docker exec -it awvs /bin/bash -c "2607:f8b0:402a:80a::200e  telemetry.invicti.com' >> /awvs/.hosts"
+
+docker restart awvs
+rm -rf awvs_listen.zip
+
+
+
+
+
+法海已经去找爱了,废弃了
 下载说明：https://www.fahai.org<br />
 本博客所发布的Docker_Awvs23.x一键安装脚本[支持版本更新]仅限用于学习和研究目的；<br />
 感谢：XrSec<br />
