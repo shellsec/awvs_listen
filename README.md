@@ -6,44 +6,62 @@ Licensed targets<br />
 100000<br />
 <br />
 #!/bin/bash<br />
-docker stop $(docker ps -a | grep "awvs" | awk '{print $1}');<br />
-chattr -i -R /var/lib/docker/overlay2/*<br />
-docker rm $(docker ps -a | grep "awvs" | awk '{print $1}');<br />
-docker rmi -f $(docker images | grep "awvs" | awk '{print $3}');<br />
-docker rmi --no-prune $(docker images | grep "awvs" | awk '{print $3}');<br />
+# 停止并删除 awvs 相关的容器和镜像 # 使用 || true 避免因权限问题导致的脚本中断<br />
+docker stop $(docker ps -a | grep "awvs" | awk '{print $1}')<br />
+chattr -i -R /var/lib/docker/overlay2/* || true &nbsp;<br />
+docker rm $(docker ps -a | grep "awvs" | awk '{print $1}')<br />
+docker rmi -f $(docker images | grep "awvs" | awk '{print $3}')<br />
+docker rmi --no-prune $(docker images | grep "awvs" | awk '{print $3}')<br />
 <br />
-<br />
+# 启动 awvs 容器<br />
 docker run -it -d \<br />
 --name awvs \<br />
 -p 3443:3443 \<br />
 --restart=always \<br />
 xrsec/awvs<br />
 <br />
+# 下面最好一行一行执行<br />
+# 下载 awvs_listen.zip 并复制到容器中<br />
+rm -rf awvs_listen.zip*<br />
 <br />
-curl -s -o awvs_listen.zip https://gh-proxy.com/https://raw.githubusercontent.com/shellsec/awvs_listen/master/awvs_listen02.zip<br />
+curl -s -o awvs_listen.zip https://gh-proxy.com/https://raw.githubusercontent.com/shellsec/awvs_listen/master/awvs_listen02.zip || { echo "Failed to download awvs_listen.zip"; exit 1; }<br />
+<br />
+#wget https://raw.githubusercontent.com/shellsec/awvs_listen/master/awvs_listen02.zip<br />
+#mv awvs_listen02.zip awvs_listen.zip<br />
+<br />
 docker cp awvs_listen.zip awvs:/awvs/<br />
-docker exec -it awvs /bin/bash -c "unzip -o /awvs/awvs_listen.zip -d /home/acunetix/.acunetix/data/license/"<br />
-docker exec -it awvs /bin/bash -c "chmod 444 /home/acunetix/.acunetix/data/license/license_info.json"<br />
-docker exec -it awvs /bin/bash -c "chown acunetix:acunetix /home/acunetix/.acunetix/data/license/license_info.json"<br />
-docker exec -it awvs /bin/bash -c "chattr +i /home/acunetix/.acunetix/data/license/license_info.json"<br />
 <br />
-docker exec -it awvs /bin/bash -c "chmod 444 /home/acunetix/.acunetix/data/license/wa_data.dat"<br />
-docker exec -it awvs /bin/bash -c "chown acunetix:acunetix /home/acunetix/.acunetix/data/license/wa_data.dat"<br />
-docker exec -it awvs /bin/bash -c "chattr +i /home/acunetix/.acunetix/data/license/wa_data.dat"<br />
+# 解压文件并修改权限<br />
+docker exec -i awvs /bin/bash -c 'unzip -o /awvs/awvs_listen.zip -d /home/acunetix/.acunetix/data/license/'<br />
+docker exec -i awvs /bin/bash -c 'chmod 444 /home/acunetix/.acunetix/data/license/{license_info.json,wa_data.dat}'<br />
+docker exec -i awvs /bin/bash -c 'chown acunetix:acunetix /home/acunetix/.acunetix/data/license/{license_info.json,wa_data.dat}'<br />
 <br />
-docker exec -it awvs /bin/bash -c "mv /home/acunetix/.acunetix/data/license/wvsc /home/acunetix/.acunetix/v_*/scanner/"<br />
-docker exec -it awvs /bin/bash -c "chmod 777 /home/acunetix/.acunetix/v_*/scanner/wvsc"<br />
-docker exec -it awvs /bin/bash -c "chown acunetix:acunetix /home/acunetix/.acunetix/v_*/scanner/wvsc"<br />
+# 移动 wvsc 文件并修改权限<br />
 <br />
-docker exec -it awvs /bin/bash -c "rm /awvs/awvs_listen.zip"<br />
-docker exec -it awvs /bin/bash -c "echo '127.0.0.1 updates.acunetix.com' &gt; /awvs/.hosts"<br />
-docker exec -it awvs /bin/bash -c "echo '127.0.0.1 erp.acunetix.com' &gt;&gt; /awvs/.hosts"<br />
-docker exec -it awvs /bin/bash -c "::1&nbsp; erp.acunetix.com' &gt;&gt; /awvs/.hosts"<br />
-docker exec -it awvs /bin/bash -c "192.178.49.174&nbsp; telemetry.invicti.com' &gt;&gt; /awvs/.hosts"<br />
-docker exec -it awvs /bin/bash -c "2607:f8b0:402a:80a::200e&nbsp; telemetry.invicti.com' &gt;&gt; /awvs/.hosts"<br />
+docker exec -i awvs /bin/bash -c 'mv /home/acunetix/.acunetix/data/license/wvsc /home/acunetix/.acunetix/v_*/scanner/'<br />
+docker exec -i awvs /bin/bash -c 'chmod 777 /home/acunetix/.acunetix/v_*/scanner/wvsc'<br />
+docker exec -i awvs /bin/bash -c 'chown acunetix:acunetix /home/acunetix/.acunetix/v_*/scanner/wvsc'<br />
 <br />
+<br />
+# 删除 zip 文件和修改 hosts 文件<br />
+docker exec -i awvs /bin/bash -c 'rm -rf /awvs/awvs_listen.zip*'<br />
+<br />
+docker exec awvs bash -c "echo '127.0.0.1 updates.acunetix.com' &gt;/awvs/.hosts"<br />
+docker exec awvs bash -c "echo '127.0.0.1 erp.acunetix.com' &gt;&gt;/awvs/.hosts"<br />
+docker exec awvs bash -c "echo '127.0.0.1 telemetry.invicti.com' &gt;&gt;/awvs/.hosts"<br />
+docker exec awvs bash -c 'cat /awvs/.hosts'<br />
+<br />
+echo '127.0.0.1 erp.acunetix.com' | tee -a /etc/hosts<br />
+echo '192.178.49.174 telemetry.invicti.com' | tee -a /etc/hosts<br />
+echo '::1 erp.acunetix.com' | tee -a /etc/hosts<br />
+echo '2607:f8b0:402a:80a::200e telemetry.invicti.com' | tee -a /etc/hosts<br />
+<br />
+<br />
+# 重启 awvs 容器并删除 zip 文件<br />
 docker restart awvs<br />
-rm -rf awvs_listen.zip<br />
+rm -rf awvs_listen.zip*<br />
+<br />
+<br />
 <br />
 <br />
 法海已经去找爱了,废弃了
