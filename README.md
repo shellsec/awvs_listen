@@ -14,12 +14,8 @@ docker rmi -f $(docker images | grep "awvs" | awk '{print $3}')<br />
 docker rmi --no-prune $(docker images | grep "awvs" | awk '{print $3}')<br />
 <br />
 # 启动 awvs 容器<br />
-docker run -it -d \<br />
---name awvs \<br />
--p 3443:3443 \<br />
---restart=always \<br />
-xrsec/awvs<br />
-<br />
+docker run -it -d --name awvs -p 3443:3443 --restart=always xrsec/awvs
+
 # 下面最好一行一行执行<br />
 # 下载 awvs_listen.zip 并复制到容器中<br />
 rm -rf awvs_listen.zip*<br />
